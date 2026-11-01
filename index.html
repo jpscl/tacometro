@@ -1,0 +1,1250 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Tacómetro Acústico</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#E9EDEF">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: columna única de instrumento (máx. 640 px): placa de identificación, pestañas, barra de fuente y vista activa. */
+:root{
+  --bg:#E9EDEF; --surface:#F7F9FA; --sunk:#DDE3E7; --ink:#16212A; --muted:#56636E; --line:#C5CED5;
+  --accent:#F0B323; --on-accent:#1E1A0E; --signal:#1F6FB2; --signal-soft:rgba(31,111,178,.14);
+  --ok:#2C7A4C; --warn:#9E5E00; --bad:#B3261E; --ok-soft:rgba(44,122,76,.13); --warn-soft:rgba(178,106,0,.14); --bad-soft:rgba(179,38,30,.11);
+  --f-plate:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-num:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  --r:8px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10161B; --surface:#182128; --sunk:#0C1115; --ink:#E2E8EC; --muted:#93A1AC; --line:#2B3842;
+  --accent:#F2BA34; --on-accent:#1E1A0E; --signal:#72B2EA; --signal-soft:rgba(114,178,234,.16);
+  --ok:#5DC08B; --warn:#E8A646; --bad:#F2766C; --ok-soft:rgba(93,192,139,.15); --warn-soft:rgba(232,166,70,.15); --bad-soft:rgba(242,118,108,.14);
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10161B; --surface:#182128; --sunk:#0C1115; --ink:#E2E8EC; --muted:#93A1AC; --line:#2B3842;
+  --accent:#F2BA34; --on-accent:#1E1A0E; --signal:#72B2EA; --signal-soft:rgba(114,178,234,.16);
+  --ok:#5DC08B; --warn:#E8A646; --bad:#F2766C; --ok-soft:rgba(93,192,139,.15); --warn-soft:rgba(232,166,70,.15); --bad-soft:rgba(242,118,108,.14);
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 40px}
+.wrap{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+#view{display:flex;flex-direction:column;gap:14px;min-width:0}
+h2,h3{font-family:var(--f-plate);font-weight:700;letter-spacing:.02em;margin:0;text-wrap:balance}
+h2{font-size:26px;line-height:1.1} h3{font-size:19px}
+p{margin:0}
+.muted{color:var(--muted)} .small{font-size:13px}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+
+/* Placa */
+.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px}
+.plate{display:inline-flex;flex-direction:column;border:2px solid var(--ink);border-radius:4px;padding:4px 10px 3px;position:relative}
+.plate b{font-family:var(--f-plate);font-weight:700;font-size:22px;letter-spacing:.12em;line-height:1.05}
+.plate span{font-family:var(--f-num);font-size:11px;letter-spacing:.06em;color:var(--muted)}
+.prof{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;min-width:0}
+select,input[type=text],input[type=number],textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px 10px;min-width:0;max-width:100%}
+.prof select{min-width:180px;max-width:260px}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+
+/* Pestañas */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tabs button{font-family:var(--f-plate);font-weight:600;font-size:17px;letter-spacing:.05em;text-transform:uppercase;background:none;border:0;color:var(--muted);padding:8px 10px 7px;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap}
+.tabs button[aria-current="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+
+/* Botones */
+button{font:inherit;cursor:pointer}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:6px;padding:9px 14px;font-weight:500;min-height:42px}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent);font-weight:600}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.btn.danger.solid{background:var(--bad);color:var(--surface)}
+.btn.ghost{background:none;border-color:transparent;color:var(--muted)}
+.btn.sm{min-height:34px;padding:5px 10px;font-size:14px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.row.end{justify-content:flex-end}
+.spread{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+
+/* Paneles */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.note{background:var(--sunk);border-radius:6px;padding:10px 12px;font-size:14px}
+.note.warn{background:var(--warn-soft);color:var(--ink)}
+.note.bad{background:var(--bad-soft)}
+.note.ok{background:var(--ok-soft)}
+
+/* Fuente de sonido */
+.source{display:flex;flex-direction:column;gap:10px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{border:0;background:var(--surface);color:var(--ink);padding:7px 12px;font-size:14px;font-weight:500}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+.status{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--line);flex:none}
+.dot.on{background:var(--ok);box-shadow:0 0 0 3px var(--ok-soft)}
+.meter{height:6px;border-radius:3px;background:var(--sunk);overflow:hidden;flex:1;min-width:60px;max-width:140px}
+.meter i{display:block;height:100%;width:0;background:var(--ok);transition:width .1s linear}
+.demo{display:grid;grid-template-columns:1fr;gap:10px;border-top:1px dashed var(--line);padding-top:10px}
+.demo label{font-size:13px;color:var(--muted)}
+.demo input[type=range]{width:100%;accent-color:var(--signal)}
+.tach{display:flex;align-items:baseline;gap:6px}
+.tach .num{font-size:20px;color:var(--ink)}
+
+/* Lectura */
+.readout{align-items:stretch}
+.rpm{display:flex;align-items:baseline;gap:8px;justify-content:center;padding-block:4px}
+.rpm .num{font-size:clamp(56px,18vw,88px);font-weight:600;line-height:1;letter-spacing:-.02em}
+.rpm .unit{font-family:var(--f-plate);font-size:24px;letter-spacing:.1em;color:var(--muted)}
+.rpm.stale .num{color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:12.5px;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--sunk);color:var(--muted);letter-spacing:.02em}
+.chip.ok{background:var(--ok-soft);color:var(--ok)} .chip.warn{background:var(--warn-soft);color:var(--warn)} .chip.bad{background:var(--bad-soft);color:var(--bad)}
+.chip.info{background:var(--signal-soft);color:var(--signal)}
+canvas.spec{width:100%;height:190px;display:block;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+
+/* Tablas */
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:6px}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:420px}
+th,td{padding:7px 9px;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600;background:var(--sunk)}
+tr:last-child td{border-bottom:0}
+td.num,th.num{text-align:right}
+tr.off td{color:var(--muted)}
+
+/* Asistente */
+.steps{display:flex;gap:4px}
+.steps i{flex:1;height:5px;border-radius:3px;background:var(--line)}
+.steps i.done{background:var(--ink)} .steps i.cur{background:var(--accent)}
+.steplabel{font-family:var(--f-num);font-size:12px;color:var(--muted);letter-spacing:.05em}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:13px;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.targets{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.target{display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.target:last-child{border-bottom:0}
+.target .num{width:86px;font-size:16px}
+.target .st{flex:1;min-width:110px;font-size:13px;color:var(--muted)}
+.target.done{background:var(--ok-soft)} .target.skip .num{text-decoration:line-through;color:var(--muted)}
+.prog{height:8px;background:var(--sunk);border-radius:4px;overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:var(--signal)}
+.stab{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600}
+.big-est{font-family:var(--f-num);font-size:40px;font-weight:600;line-height:1}
+ul.clean{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+svg.scheme{width:100%;max-width:420px;height:auto;display:block;margin:0 auto;color:var(--ink)}
+
+/* Perfiles */
+.plist{display:flex;flex-direction:column;gap:10px}
+.pcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.pcard.active{border-color:var(--ink);box-shadow:inset 3px 0 0 var(--accent)}
+.pcard .meta{font-size:13px;color:var(--muted)}
+.danger-zone{border:1px solid var(--bad);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:10px}
+.danger-zone h3{color:var(--bad)}
+textarea{width:100%;min-height:90px;font-family:var(--f-num);font-size:12px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--surface);padding:9px 16px;border-radius:6px;font-size:14px;z-index:20;max-width:calc(100% - 32px)}
+@media (max-width:420px){.tabs button{font-size:15.5px;padding:8px 7px 7px;letter-spacing:.03em}table.compact{min-width:0}}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="plate"><b>TACÓMETRO ACÚSTICO</b><span>BANCADA DE PRÁCTICAS · 300–1800 rpm</span></div>
+    <label class="prof" for="profileSel">Perfil activo<select id="profileSel"></select></label>
+  </header>
+
+  <nav class="tabs" aria-label="Secciones">
+    <button data-view="medir">Medir</button>
+    <button data-view="calibrar">Calibrar</button>
+    <button data-view="perfiles">Perfiles</button>
+    <button data-view="ayuda">Ayuda</button>
+  </nav>
+
+  <section class="panel source" aria-label="Fuente de sonido">
+    <div class="spread">
+      <div class="row">
+        <span class="small muted">Fuente</span>
+        <div class="seg" role="group" aria-label="Fuente de sonido">
+          <button id="srcMic" data-action="srcMic" aria-pressed="false">Micrófono</button>
+          <button id="srcDemo" data-action="srcDemo" aria-pressed="false">Demo</button>
+          <button id="srcOff" data-action="srcOff" aria-pressed="true">Apagada</button>
+        </div>
+      </div>
+      <div class="status"><span id="srcDot" class="dot"></span><span id="srcText">Sin sonido</span><span class="meter" aria-hidden="true"><i id="lvl"></i></span></div>
+    </div>
+    <div id="srcMsg" class="note bad" hidden></div>
+    <div id="demoPanel" class="demo" hidden>
+      <div class="field">
+        <label for="demoRpm">Velocidad de la bancada simulada: <span id="demoRpmTxt" class="num">1200</span> rpm</label>
+        <input id="demoRpm" type="range" min="250" max="1900" step="10" value="1200">
+      </div>
+      <div class="spread">
+        <div class="row">
+          <select id="demoLoad" aria-label="Carga simulada"><option value="vacio">Vacío</option><option value="media">Carga media</option><option value="plena">Plena carga</option></select>
+          <label class="small"><input id="demoExc" type="checkbox"> Síncrono excitado</label>
+        </div>
+        <div class="tach"><span class="small muted">Tacómetro</span><span id="demoTach" class="num">—</span><span class="small muted">rpm</span></div>
+      </div>
+      <p class="small muted">Simula una bancada con colector de 30 delgas, rotor de 28 barras, ventilador de 9 palas y síncrono de 4 polos, más zumbido de red y otra bancada cercana.</p>
+    </div>
+  </section>
+
+  <main id="view"></main>
+</div>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+/*ALGO-START*/
+const Algo = (() => {
+  const CFG = { fMin: 40, fMax: 5000, thrDb: 6, maxPeaks: 40, tolAbs: 4, tolRel: 0.012 };
+  /* Las líneas útiles cumplen f = k·rpm/60 + c con c = 0 (mecánicas, colector, ventilador, síncrono en isla)
+     o c = ±n·50 Hz (armónicos de ranura de la inducción conectada a red). */
+  const GRID = 50, C_GATE = 18;
+  const tolF = f => Math.max(CFG.tolAbs, CFG.tolRel * Math.abs(f));
+  const fin = x => (Number.isFinite(x) ? x : -200);
+
+  /* Picos de un espectro en dB. binHz = resolución. Devuelve [{f, prom}] ordenado por f. */
+  function findPeaks(db, binHz, thrDb = CFG.thrDb) {
+    const N = db.length;
+    const i0 = Math.max(3, Math.floor(CFG.fMin / binHz));
+    const i1 = Math.min(N - 4, Math.ceil(CFG.fMax / binHz));
+    if (i1 <= i0) return [];
+    const v = i => fin(db[i]);
+    const B = 24, nb = Math.ceil((i1 - i0 + 1) / B), centers = [], meds = [];
+    for (let b = 0; b < nb; b++) {
+      const s = i0 + b * B, e = Math.min(i1 + 1, s + B), arr = [];
+      for (let i = s; i < e; i++) arr.push(v(i));
+      arr.sort((x, y) => x - y);
+      meds.push(arr[Math.floor(arr.length * 0.4)]);
+      centers.push((s + e - 1) / 2);
+    }
+    const floorAt = i => {
+      if (nb === 1) return meds[0];
+      let b = Math.floor((i - centers[0]) / B);
+      b = Math.max(0, Math.min(nb - 2, b));
+      const t = Math.max(0, Math.min(1, (i - centers[b]) / (centers[b + 1] - centers[b])));
+      return meds[b] + (meds[b + 1] - meds[b]) * t;
+    };
+    const peaks = [];
+    for (let i = i0; i <= i1; i++) {
+      const x = v(i);
+      if (!(x > v(i - 1) && x >= v(i + 1) && x > v(i - 2) && x >= v(i + 2))) continue;
+      const prom = x - floorAt(i);
+      if (prom < thrDb) continue;
+      const a = v(i - 1), c = v(i + 1), den = a - 2 * x + c;
+      const p = den < 0 ? Math.max(-0.5, Math.min(0.5, 0.5 * (a - c) / den)) : 0;
+      peaks.push({ f: Math.round((i + p) * binHz * 100) / 100, prom: Math.round(prom * 10) / 10 });
+    }
+    peaks.sort((p, q) => q.prom - p.prom);
+    return peaks.slice(0, CFG.maxPeaks).sort((p, q) => p.f - q.f);
+  }
+
+  /* Promedio en potencia de varios espectros en dB */
+  class Averager {
+    constructor() { this.sum = null; this.n = 0; }
+    add(db) {
+      if (!this.sum) this.sum = new Float64Array(db.length);
+      for (let i = 0; i < db.length; i++) this.sum[i] += Math.pow(10, fin(db[i]) / 10);
+      this.n++;
+    }
+    result() {
+      const out = new Float32Array(this.sum ? this.sum.length : 0);
+      for (let i = 0; i < out.length; i++) out[i] = 10 * Math.log10(this.sum[i] / this.n + 1e-30);
+      return out;
+    }
+  }
+
+  /* Ajuste por mínimos cuadrados con ordenada fija (c múltiplo de la frecuencia de red) */
+  function lsFixedC(pairs, c) {
+    let sxy = 0, sxx = 0, my = 0;
+    for (const [x, y] of pairs) { sxy += x * (y - c); sxx += x * x; my += y; }
+    const a = sxx > 0 ? sxy / sxx : 0; my /= pairs.length;
+    let sst = 0, sse = 0;
+    for (const [x, y] of pairs) { sst += (y - my) ** 2; sse += (y - a * x - c) ** 2; }
+    return { a, c, r2: sst > 0 ? 1 - sse / sst : 1 };
+  }
+  function ls(pairs) {
+    const n = pairs.length;
+    let sx = 0, sy = 0; for (const [x, y] of pairs) { sx += x; sy += y; }
+    const mx = sx / n, my = sy / n;
+    let sxx = 0, sxy = 0, syy = 0;
+    for (const [x, y] of pairs) { sxx += (x - mx) ** 2; sxy += (x - mx) * (y - my); syy += (y - my) ** 2; }
+    const a = sxx > 0 ? sxy / sxx : 0, c = my - a * mx;
+    const r2 = syy > 0 ? (sxy * sxy) / (sxx * syy) : 1;
+    return { a, c, r2 };
+  }
+
+  /* Líneas que aparecen a la misma frecuencia en muchos puntos de velocidad distinta: fijas */
+  function clusterFixed(points, bg) {
+    const all = [];
+    points.forEach((pt, pi) => pt.peaks.forEach(p => all.push({ f: p.f, pi })));
+    all.sort((a, b) => a.f - b.f);
+    const fixed = [];
+    let cl = [];
+    const need = Math.max(3, Math.ceil(0.6 * points.length));
+    const flush = () => {
+      if (!cl.length) return;
+      const pis = [...new Set(cl.map(x => x.pi))];
+      const rpms = pis.map(i => points[i].rpm);
+      if (pis.length >= need && Math.max(...rpms) - Math.min(...rpms) >= 400)
+        fixed.push(cl.reduce((s, x) => s + x.f, 0) / cl.length);
+      cl = [];
+    };
+    for (const x of all) { if (cl.length && x.f - cl[0].f > tolF(cl[0].f)) flush(); cl.push(x); }
+    flush();
+    (bg || []).forEach(p => fixed.push(p.f));
+    return fixed.sort((a, b) => a - b);
+  }
+
+  function originLabel(k, c) {
+    const kr = Math.round(k), kOk = Math.abs(k - kr) < 0.12;
+    const m = Math.round(c / GRID);
+    if (m === 0) return kOk ? `Proporcional al giro, orden ${kr}` : "Proporcional al giro";
+    return `Ranura o eléctrica${kOk ? `, orden ${kr}` : ""}, ${m > 0 ? "+" : "−"}${Math.abs(m) * GRID} Hz`;
+  }
+
+  /* Ajuste de líneas f = a·rpm + c sobre los puntos de calibración */
+  function fitLines(points, bg) {
+    const np = points.length;
+    const fixed = clusterFixed(points, bg);
+    const isFixed = f => fixed.some(x => Math.abs(x - f) <= tolF(f));
+    const pool = points.map(pt => pt.peaks.filter(p => !isFixed(p.f))
+      .map(p => ({ f: p.f, prom: p.prom, used: false })).sort((a, b) => a.f - b.f));
+    const nearest = (arr, fp) => {
+      const t = tolF(fp);
+      let lo = 0, hi = arr.length - 1;
+      while (lo < hi) { const mid = (lo + hi) >> 1; if (arr[mid].f < fp) lo = mid + 1; else hi = mid; }
+      let best = null, bd = t;
+      for (let k = lo - 2; k <= lo + 2; k++) {
+        const p = arr[k]; if (!p || p.used) continue;
+        const d = Math.abs(p.f - fp); if (d <= bd) { bd = d; best = p; }
+      }
+      return best ? { p: best, d: bd } : null;
+    };
+    const evalLine = (a, c) => {
+      const m = [];
+      for (let i = 0; i < np; i++) { const r = nearest(pool[i], a * points[i].rpm + c); if (r) m.push({ i, p: r.p, d: r.d }); }
+      return m;
+    };
+    const span = m => { const r = m.map(x => points[x.i].rpm); return Math.max(...r) - Math.min(...r); };
+    const lines = [];
+    const minN = Math.max(3, Math.ceil(0.4 * np));
+    for (let iter = 0; iter < 14; iter++) {
+      let best = null;
+      for (let i = 0; i < np; i++) for (let j = i + 1; j < np; j++) {
+        const ri = points[i].rpm, rj = points[j].rpm;
+        if (Math.abs(rj - ri) < 350) continue;
+        for (const pi of pool[i]) {
+          if (pi.used) continue;
+          for (const pj of pool[j]) {
+            if (pj.used) continue;
+            const a0 = (pj.f - pi.f) / (rj - ri);
+            if (60 * a0 < 0.5 || 60 * a0 > 200) continue;
+            const c0 = pi.f - a0 * ri, c = GRID * Math.round(c0 / GRID);
+            if (Math.abs(c0 - c) > C_GATE || Math.abs(c) > 8 * GRID) continue;
+            const a = ((pi.f - c) / ri + (pj.f - c) / rj) / 2;
+            const m = evalLine(a, c);
+            if (m.length < minN || (best && m.length < best.m.length)) continue;
+            if (span(m) < 400) continue;
+            const err = m.reduce((s, x) => s + x.d / tolF(x.p.f), 0) / m.length;
+            if (!best || m.length > best.m.length || err < best.err) best = { m, err, c };
+          }
+        }
+      }
+      if (!best) break;
+      let m = best.m, fit = lsFixedC(m.map(x => [points[x.i].rpm, x.p.f]), best.c);
+      const m2 = evalLine(fit.a, fit.c);
+      if (m2.length >= m.length && span(m2) >= 400) { m = m2; fit = lsFixedC(m.map(x => [points[x.i].rpm, x.p.f]), best.c); }
+      m.forEach(x => (x.p.used = true));
+      const res = m.map(x => x.p.f - (fit.a * points[x.i].rpm + fit.c));
+      const rmsRpm = Math.sqrt(res.reduce((s, r) => s + r * r, 0) / res.length) / fit.a;
+      const rp = m.map(x => points[x.i].rpm);
+      const conds = [...new Set(m.map(x => condLabel(points[x.i])))];
+      const kInt = Math.abs(60 * fit.a - Math.round(60 * fit.a)) <= 0.15;
+      const status = rmsRpm > 45 ? "mala" : (rmsRpm <= 20 && kInt && m.length >= Math.ceil(0.5 * np)) ? "ok" : "dudosa";
+      lines.push({
+        id: "L" + (lines.length + 1), a: fit.a, c: fit.c, k: 60 * fit.a, n: m.length, np,
+        rmsRpm: Math.round(rmsRpm * 10) / 10, r2: fit.r2, rpmLo: Math.min(...rp), rpmHi: Math.max(...rp),
+        prom: Math.round(m.reduce((s, x) => s + x.p.prom, 0) / m.length), conds,
+        status, enabled: status === "ok", origin: originLabel(60 * fit.a, fit.c)
+      });
+    }
+    lines.sort((x, y) => (y.n - x.n) || (x.rmsRpm - y.rmsRpm));
+    lines.forEach((l, i) => (l.id = "L" + (i + 1)));
+    return { lines, fixed: fixed.map(f => Math.round(f * 10) / 10) };
+  }
+
+  function condLabel(pt) {
+    const l = { vacio: "vacío", media: "carga media", plena: "plena carga" }[pt.load] || "vacío";
+    return pt.exc ? l + " · exc." : l;
+  }
+
+  /* Estimación de rpm por consenso entre líneas */
+  function estimate(peaks, lines, range, prev, fixed) {
+    const L = lines.filter(l => l.enabled);
+    if (fixed && fixed.length && peaks) peaks = peaks.filter(p => !fixed.some(x => Math.abs(x - p.f) <= tolF(p.f) * 0.6));
+    if (!L.length || !peaks || !peaks.length) return null;
+    const lo = range.min * 0.7, hi = range.max * 1.2;
+    const byLine = L.map(l => {
+      const arr = [];
+      for (const p of peaks) {
+        const r = (p.f - l.c) / l.a;
+        if (r >= lo && r <= hi) arr.push({ r, w: p.prom, f: p.f, tol: tolF(p.f) / l.a });
+      }
+      return arr;
+    });
+    let best = null;
+    byLine.forEach(arr => arr.forEach(cand => {
+      let n = 0, wsum = 0, rs = 0, psum = 0;
+      const used = [], taken = new Set(), match = [];
+      byLine.forEach((arr2, lj) => {
+        for (const c2 of arr2) {
+          const d = Math.abs(c2.r - cand.r);
+          if (d <= Math.max(c2.tol, cand.tol)) match.push({ lj, c2, d: d / Math.max(c2.tol, cand.tol) });
+        }
+      });
+      // cada pico solo puede explicar una línea, y cada línea usa un solo pico
+      match.sort((x, y) => x.d - y.d);
+      const lineDone = new Set();
+      for (const { lj, c2 } of match) {
+        if (lineDone.has(lj) || taken.has(c2.f)) continue;
+        lineDone.add(lj); taken.add(c2.f);
+        n++; psum += c2.w;
+        const w = L[lj].a * Math.min(c2.w, 30);
+        wsum += w; rs += w * c2.r;
+        used.push({ id: L[lj].id, f: c2.f, r: c2.r });
+      }
+      // penaliza las líneas que deberían verse a esta velocidad y no aparecen
+      // (salvo si caen fuera de banda o tapadas por una línea fija)
+      let miss = 0;
+      const rr = rs / wsum;
+      L.forEach((l, lj) => {
+        if (lineDone.has(lj)) return;
+        const fe = l.a * rr + l.c;
+        if (fe < CFG.fMin || fe > CFG.fMax) return;
+        if (fixed && fixed.some(x => Math.abs(x - fe) <= Math.max(10, 0.02 * fe))) return;
+        miss += Math.min(1, (l.prom || 15) / 20) * 0.5;
+      });
+      const near = prev && Math.abs(cand.r - prev) < 0.06 * prev ? 0.4 : 0;
+      const score = n - miss + near + psum * 0.001;
+      if (!best || score > best.score) best = { score, n, rpm: rs / wsum, used };
+    }));
+    if (!best) return { rpm: null, n: 0, total: L.length, used: [] };
+    return { rpm: best.rpm, n: best.n, total: L.length, used: best.used };
+  }
+
+  /* Bancada simulada (para demo, ejemplo y pruebas) */
+  const DEMO = {
+    lines: [
+      { k: 9, c: 0, amp: 1.0 }, { k: 18, c: 0, amp: 0.45 },
+      { k: 30, c: 0, amp: 0.7 }, { k: 60, c: 0, amp: 0.3 },
+      { k: 28, c: -50, amp: 0.5, load: true }, { k: 28, c: 50, amp: 0.5, load: true },
+      { k: 4, c: 0, amp: 0.8, exc: true }
+    ],
+    fixed: [{ f: 100, amp: 0.9 }, { f: 200, amp: 0.4 }, { f: 300, amp: 0.3 }, { f: 345, amp: 0.5 }, { f: 1035, amp: 0.35 }],
+    level(rpm) { return 0.22 + 0.78 * Math.pow(Math.max(0, rpm) / 1800, 1.5); },
+    loadF(load) { return load === "plena" ? 1 : load === "media" ? 0.65 : 0.35; }
+  };
+  function rng(seed) { let s = seed >>> 0; return () => { s = (s + 0x6D2B79F5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  function demoPeaks(rpm, load, exc, rand) {
+    const out = [];
+    const lvl = DEMO.level(rpm);
+    for (const l of DEMO.lines) {
+      const f = l.k * rpm / 60 + l.c;
+      if (f < CFG.fMin || f > CFG.fMax) continue;
+      let amp = l.amp * lvl;
+      if (l.load) amp *= DEMO.loadF(load);
+      if (l.exc && !exc) amp *= 0.05;
+      const prom = 20 + 20 * Math.log10(amp + 1e-6) + 8 + (rand() - 0.5) * 3;
+      if (prom >= CFG.thrDb) out.push({ f: Math.round((f + (rand() - 0.5) * 0.8) * 100) / 100, prom: Math.round(prom * 10) / 10 });
+    }
+    for (const x of DEMO.fixed) out.push({ f: Math.round((x.f + (rand() - 0.5) * 0.6) * 100) / 100, prom: Math.round((22 + 20 * Math.log10(x.amp)) * 10) / 10 });
+    for (let i = 0; i < 10; i++) out.push({ f: Math.round((60 + rand() * 3000) * 100) / 100, prom: Math.round((6 + rand() * 4) * 10) / 10 });
+    return out.sort((a, b) => a.f - b.f);
+  }
+
+  return { CFG, tolF, findPeaks, Averager, fitLines, estimate, condLabel, DEMO, demoPeaks, rng };
+})();
+/*ALGO-END*/
+
+/* ===================== Almacenamiento ===================== */
+const KEY = "tacometroAcustico.v1";
+const RANGE = { min: 300, max: 1800 };
+const SUGGESTED = [300, 600, 900, 1200, 1500, 1800];
+let memStore = null;
+function loadStore() {
+  try { const t = localStorage.getItem(KEY); if (t) return JSON.parse(t); } catch (e) {}
+  return memStore || { version: 1, activeId: null, seeded: false, profiles: [] };
+}
+function saveStore() {
+  memStore = S.store;
+  try { localStorage.setItem(KEY, JSON.stringify(S.store)); } catch (e) {}
+}
+const uid = () => "p" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmt = (x, d = 0) => (x == null || !Number.isFinite(x) ? "—" : (Math.abs(x) < 0.5 * Math.pow(10, -d) ? 0 : x).toLocaleString("es-ES", { minimumFractionDigits: d, maximumFractionDigits: d }));
+const fdate = t => new Date(t).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" });
+const activeProfile = () => S.store.profiles.find(p => p.id === S.store.activeId) || null;
+const rangeOf = pts => pts.length ? { min: Math.min(...pts.map(p => p.rpm)), max: Math.max(...pts.map(p => p.rpm)) } : { ...RANGE };
+
+function seedExample() {
+  if (S.store.seeded) return;
+  const rand = Algo.rng(7);
+  const pts = SUGGESTED.map(r => ({ rpm: r, load: "vacio", exc: false, peaks: Algo.demoPeaks(r, "vacio", false, rand) }));
+  pts.push({ rpm: 800, load: "media", exc: true, peaks: Algo.demoPeaks(800, "media", true, rand) });
+  pts.push({ rpm: 1400, load: "plena", exc: true, peaks: Algo.demoPeaks(1400, "plena", true, rand) });
+  const bg = Algo.demoPeaks(0, "vacio", false, rand).filter(p => p.prom > 12);
+  const { lines, fixed } = Algo.fitLines(pts, bg);
+  const now = Date.now();
+  S.store.profiles.push({ id: "ejemplo", name: "Ejemplo · bancada simulada", note: "Perfil de ejemplo calibrado sobre la bancada del modo demo. Puedes borrarlo.", example: true, created: now, updated: now, range: rangeOf(pts), bg, points: pts, lines, fixed });
+  S.store.activeId = S.store.activeId || "ejemplo";
+  S.store.seeded = true;
+  saveStore();
+}
+
+/* ===================== Audio ===================== */
+const AU = {
+  ctx: null, analyser: null, mode: "off", stream: null, nodes: [], buf: null, tbuf: null,
+  ema: null, binHz: 0, timer: null, tick: 0, captures: [], wake: null,
+  demoRpm: 1200, demoActual: 1200, demoLoad: "vacio", demoExc: false, demoDrift: 0,
+  livePeaks: [], peakHist: [],
+
+  async ensureCtx() {
+    if (!this.ctx) {
+      const C = window.AudioContext || window.webkitAudioContext;
+      if (!C) throw new Error("Este navegador no permite analizar audio.");
+      this.ctx = new C();
+    }
+    if (this.ctx.state === "suspended") await this.ctx.resume();
+    this.analyser = this.ctx.createAnalyser();
+    this.analyser.fftSize = 16384;
+    this.analyser.smoothingTimeConstant = 0;
+    const mute = this.ctx.createGain(); mute.gain.value = 0;
+    this.analyser.connect(mute); mute.connect(this.ctx.destination);
+    this.nodes.push(mute);
+    this.buf = new Float32Array(this.analyser.frequencyBinCount);
+    this.tbuf = new Float32Array(this.analyser.fftSize);
+    this.binHz = this.ctx.sampleRate / this.analyser.fftSize;
+    this.ema = null; this.livePeaks = []; this.peakHist = [];
+  },
+  teardown() {
+    clearInterval(this.timer); this.timer = null;
+    this.nodes.forEach(n => { try { n.stop && n.stop(); } catch (e) {} try { n.disconnect(); } catch (e) {} });
+    this.nodes = [];
+    if (this.analyser) { try { this.analyser.disconnect(); } catch (e) {} this.analyser = null; }
+    if (this.stream) { this.stream.getTracks().forEach(t => t.stop()); this.stream = null; }
+    this.captures.forEach(c => c.reject(new Error("Fuente de sonido detenida")));
+    this.captures = [];
+    if (this.wake) { this.wake.release().catch(() => {}); this.wake = null; }
+    this.mode = "off";
+  },
+  async lockScreen() { try { if (navigator.wakeLock) { this.wake = await navigator.wakeLock.request("screen"); this.wake.addEventListener("release", () => (this.wake = null)); } } catch (e) {} },
+  async startMic() {
+    this.teardown();
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error("NOAPI");
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+    await this.ensureCtx();
+    this.stream = stream;
+    const src = this.ctx.createMediaStreamSource(stream);
+    src.connect(this.analyser); this.nodes.push(src);
+    this.mode = "mic"; this.run(); this.lockScreen();
+  },
+  async startDemo() {
+    this.teardown();
+    await this.ensureCtx();
+    const ctx = this.ctx, mix = ctx.createGain(); mix.gain.value = 1; mix.connect(this.analyser); this.nodes.push(mix);
+    const len = ctx.sampleRate * 2, nb = ctx.createBuffer(1, len, ctx.sampleRate), d = nb.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    const noise = ctx.createBufferSource(); noise.buffer = nb; noise.loop = true;
+    const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 2500;
+    const ng = ctx.createGain(); ng.gain.value = 0.05;
+    noise.connect(lp); lp.connect(ng); ng.connect(mix); noise.start();
+    this.nodes.push(noise, lp, ng);
+    this.demoOsc = [];
+    const add = (def, fixed) => {
+      const o = ctx.createOscillator(), g = ctx.createGain(); g.gain.value = 0;
+      o.connect(g); g.connect(mix); o.start(); this.nodes.push(o, g);
+      this.demoOsc.push({ o, g, def, fixed });
+    };
+    Algo.DEMO.lines.forEach(l => add(l, false));
+    Algo.DEMO.fixed.forEach(l => add(l, true));
+    this.mode = "demo"; this.updateDemo(true); this.run(); this.lockScreen();
+  },
+  updateDemo(now) {
+    if (this.mode !== "demo") return;
+    const t = this.ctx.currentTime, r = this.demoActual, lvl = Algo.DEMO.level(r);
+    for (const x of this.demoOsc) {
+      let f, amp;
+      if (x.fixed) { f = x.def.f; amp = x.def.amp * 0.012; }
+      else {
+        f = x.def.k * r / 60 + x.def.c; amp = x.def.amp * lvl * 0.012;
+        if (x.def.load) amp *= Algo.DEMO.loadF(this.demoLoad);
+        if (x.def.exc && !this.demoExc) amp *= 0.05;
+        if (f < 20) { f = 20; amp = 0; }
+      }
+      x.o.frequency.setTargetAtTime(f, t, now ? 0.001 : 0.08);
+      x.g.gain.setTargetAtTime(amp, t, now ? 0.001 : 0.08);
+    }
+  },
+  run() {
+    clearInterval(this.timer);
+    this.timer = setInterval(() => this.frame(), 100);
+  },
+  frame() {
+    if (!this.analyser) return;
+    if (this.mode === "demo") {
+      this.demoDrift = Math.max(-0.004, Math.min(0.004, this.demoDrift + (Math.random() - 0.5) * 0.0008));
+      this.demoActual += (this.demoRpm * (1 + this.demoDrift) - this.demoActual) * 0.25;
+      this.updateDemo(false);
+    }
+    this.analyser.getFloatFrequencyData(this.buf);
+    const n = Math.min(this.buf.length, Math.ceil(6000 / this.binHz));
+    if (!this.ema || this.ema.length !== n) { this.ema = new Float64Array(n); for (let i = 0; i < n; i++) this.ema[i] = Math.pow(10, (Number.isFinite(this.buf[i]) ? this.buf[i] : -200) / 10); }
+    for (let i = 0; i < n; i++) { const p = Math.pow(10, (Number.isFinite(this.buf[i]) ? this.buf[i] : -200) / 10); this.ema[i] = 0.7 * this.ema[i] + 0.3 * p; }
+    for (const c of this.captures) {
+      c.avg.add(this.buf.subarray(0, n));
+      c.onProgress && c.onProgress(Math.min(1, (performance.now() - c.t0) / c.ms));
+      if (performance.now() - c.t0 >= c.ms) { c.done = true; c.resolve(Algo.findPeaks(c.avg.result(), this.binHz)); }
+    }
+    this.captures = this.captures.filter(c => !c.done);
+    this.analyser.getFloatTimeDomainData(this.tbuf);
+    let s = 0; for (let i = 0; i < this.tbuf.length; i += 4) s += this.tbuf[i] * this.tbuf[i];
+    this.level = Math.sqrt(s / (this.tbuf.length / 4));
+    this.tick++;
+    if (this.tick % 2 === 0) {
+      this.liveDb = new Float32Array(n);
+      for (let i = 0; i < n; i++) this.liveDb[i] = 10 * Math.log10(this.ema[i] + 1e-30);
+      this.livePeaks = Algo.findPeaks(this.liveDb, this.binHz);
+      if (this.tick % 4 === 0) { this.peakHist.push(this.livePeaks); if (this.peakHist.length > 4) this.peakHist.shift(); }
+      onLive();
+    }
+    onLevel();
+  },
+  capture(ms, onProgress) {
+    return new Promise((resolve, reject) => {
+      if (!this.analyser) return reject(new Error("No hay fuente de sonido activa"));
+      this.captures.push({ ms, onProgress, resolve, reject, t0: performance.now(), avg: new Algo.Averager() });
+    });
+  },
+  stability() {
+    if (this.peakHist.length < 3) return { ok: false, frac: 0, n: 0 };
+    const a = this.peakHist[this.peakHist.length - 1].filter(p => p.prom >= 10);
+    const b = this.peakHist[this.peakHist.length - 3];
+    if (a.length < 3) return { ok: false, frac: 0, n: a.length };
+    const m = a.filter(p => b.some(q => Math.abs(q.f - p.f) <= Algo.tolF(p.f) * 0.5)).length;
+    const frac = m / a.length;
+    return { ok: frac >= 0.7, frac, n: a.length };
+  }
+};
+
+/* ===================== Estado ===================== */
+const S = {
+  store: null, view: "medir", measuring: false, frozen: false, hist: [], est: null, lastShown: null,
+  wiz: null, confirmDel: null, confirmReset: false, importOpen: false, wizCancel: false
+};
+const $ = id => document.getElementById(id);
+function toast(msg) { const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => (t.hidden = true), 2600); }
+
+/* ===================== Fuente ===================== */
+function renderSource() {
+  const m = AU.mode;
+  $("srcMic").setAttribute("aria-pressed", m === "mic");
+  $("srcDemo").setAttribute("aria-pressed", m === "demo");
+  $("srcOff").setAttribute("aria-pressed", m === "off");
+  $("srcDot").className = "dot" + (m !== "off" ? " on" : "");
+  $("srcText").textContent = m === "mic" ? "Micrófono activo" : m === "demo" ? "Bancada simulada" : "Sin sonido";
+  $("demoPanel").hidden = m !== "demo";
+}
+function onLevel() {
+  const l = AU.level || 0, db = 20 * Math.log10(l + 1e-9);
+  $("lvl").style.width = Math.max(0, Math.min(100, (db + 70) * 1.6)) + "%";
+  if (AU.mode === "demo") $("demoTach").textContent = fmt(Math.round(AU.demoActual + (Math.random() - 0.5) * 3));
+}
+async function setSource(mode) {
+  $("srcMsg").hidden = true;
+  stopMeasure(true);
+  try {
+    if (mode === "mic") await AU.startMic();
+    else if (mode === "demo") await AU.startDemo();
+    else AU.teardown();
+  } catch (e) {
+    AU.teardown();
+    const msg = e && e.name === "NotAllowedError" ? "El micrófono no está permitido en esta vista. Si estás dentro de Claude, abre la app desde su archivo alojado (pestaña Ayuda). Mientras tanto puedes probarla en modo Demo."
+      : e && e.name === "NotFoundError" ? "No se ha encontrado ningún micrófono en este dispositivo."
+      : e && e.message === "NOAPI" ? "Este navegador no da acceso al micrófono aquí. La página debe abrirse por HTTPS (consulta la pestaña Ayuda) o puedes usar el modo Demo."
+      : "No se ha podido iniciar el sonido: " + (e && e.message ? e.message : e);
+    $("srcMsg").textContent = msg; $("srcMsg").hidden = false;
+  }
+  renderSource();
+  render();
+}
+
+/* ===================== Vistas ===================== */
+function render() {
+  document.querySelectorAll(".tabs button").forEach(b => b.setAttribute("aria-current", b.dataset.view === S.view));
+  renderProfileSel();
+  const v = $("view");
+  if (S.view === "medir") v.innerHTML = viewMedir();
+  else if (S.view === "calibrar") v.innerHTML = viewCalibrar();
+  else if (S.view === "perfiles") v.innerHTML = viewPerfiles();
+  else v.innerHTML = viewAyuda();
+  if (S.view === "medir") { drawSpec(); updateReadout(); }
+  if (S.view === "calibrar") afterWizRender();
+}
+function renderProfileSel() {
+  const sel = $("profileSel");
+  const ps = S.store.profiles;
+  sel.innerHTML = ps.length ? ps.map(p => `<option value="${esc(p.id)}"${p.id === S.store.activeId ? " selected" : ""}>${esc(p.name)}</option>`).join("") : `<option value="">Sin perfiles</option>`;
+  sel.disabled = !ps.length;
+}
+
+/* ---------- Medir ---------- */
+function viewMedir() {
+  const p = activeProfile();
+  if (!p) return `<section class="panel"><h2>No hay ningún perfil calibrado</h2><p class="muted">Para medir, primero calibra la bancada con el tacómetro. Solo hay que hacerlo una vez por bancada.</p><div class="row"><button class="btn primary" data-action="newCal">Calibrar una bancada</button></div></section>`;
+  const en = p.lines.filter(l => l.enabled);
+  return `
+  <section class="panel readout">
+    <div class="spread"><span class="small muted">${esc(p.name)}</span><span class="small muted num">Rango calibrado ${fmt(p.range.min)}–${fmt(p.range.max)} rpm</span></div>
+    <div id="rpmBox" class="rpm stale"><span id="rpmVal" class="num">—</span><span class="unit">RPM</span></div>
+    <div class="chips"><span id="confChip" class="chip">Parado</span><span id="extraChip" class="chip warn" hidden>Extrapolada</span><span id="frozenChip" class="chip info" hidden>Congelada</span></div>
+    <div class="row" style="justify-content:center">
+      <button id="measureBtn" class="btn primary" data-action="toggleMeasure">${S.measuring ? "■ Parar" : "▶ Medir"}</button>
+      <button id="freezeBtn" class="btn" data-action="freeze"${S.measuring ? "" : " disabled"}>${S.frozen ? "Reanudar" : "Congelar"}</button>
+    </div>
+    ${AU.mode === "off" ? `<p class="note small">Elige una fuente de sonido arriba: el micrófono para la bancada real o la demo para probar.</p>` : ""}
+  </section>
+  <canvas id="spec" class="spec" aria-label="Espectro en directo con las líneas del perfil"></canvas>
+  <p class="small muted">Espectro en directo (escala logarítmica). Las marcas verticales son las líneas del perfil a la velocidad estimada; en verde las que coinciden.</p>
+  <div class="tw"><table class="compact">
+    <thead><tr><th>Línea</th><th>Origen probable</th><th class="num">f actual</th><th class="num">rpm</th></tr></thead>
+    <tbody id="lineRows">${en.map(l => `<tr data-line="${l.id}"><td class="num">${l.id}</td><td>${esc(l.origin)}</td><td class="num" data-f>—</td><td class="num" data-r>—</td></tr>`).join("") || `<tr><td colspan="4" class="muted">El perfil no tiene líneas activas. Recalíbralo o activa líneas en Perfiles.</td></tr>`}</tbody>
+  </table></div>`;
+}
+function toggleMeasure() {
+  if (S.measuring) { stopMeasure(); render(); return; }
+  if (AU.mode === "off") { toast("Primero elige una fuente de sonido"); return; }
+  S.measuring = true; S.frozen = false; S.hist = []; S.est = null; S.lastShown = null;
+  render();
+}
+function stopMeasure(silent) { S.measuring = false; S.frozen = false; if (!silent && S.view === "medir") updateReadout(); }
+function onLive() {
+  if (S.view === "medir") {
+    if (S.measuring && !S.frozen) {
+      const p = activeProfile();
+      if (p) {
+        const prev = S.lastShown;
+        const est = Algo.estimate(AU.livePeaks, p.lines, p.range, prev, p.fixed);
+        S.est = est;
+        const need = Math.min(2, est ? est.total : 2);
+        if (est && est.rpm != null && est.n >= need) {
+          S.hist.push(est.rpm); if (S.hist.length > 5) S.hist.shift();
+          const sorted = [...S.hist].sort((a, b) => a - b);
+          S.lastShown = sorted[Math.floor(sorted.length / 2)];
+          S.lastAt = performance.now();
+        } else if (S.lastAt && performance.now() - S.lastAt > 2500) { S.lastShown = null; S.hist = []; }
+      }
+      updateReadout();
+    }
+    if (!S.frozen) drawSpec();
+  } else if (S.view === "calibrar") wizLive();
+}
+function updateReadout() {
+  const box = $("rpmBox"); if (!box) return;
+  const p = activeProfile(); if (!p) return;
+  const r = S.lastShown, est = S.est;
+  box.classList.toggle("stale", !(S.measuring && r != null));
+  $("rpmVal").textContent = r != null ? fmt(Math.round(r / 5) * 5) : "—";
+  const chip = $("confChip");
+  if (!S.measuring) { chip.className = "chip"; chip.textContent = "Parado"; }
+  else if (!est || r == null) { chip.className = "chip bad"; chip.textContent = "Sin lectura fiable"; }
+  else {
+    const frac = est.n / est.total;
+    chip.className = "chip " + (frac >= 0.5 && est.n >= 2 ? "ok" : est.n >= 2 ? "warn" : "bad");
+    chip.textContent = `${est.n} de ${est.total} líneas coinciden`;
+  }
+  $("extraChip").hidden = !(S.measuring && r != null && (r < p.range.min - 30 || r > p.range.max + 30));
+  $("frozenChip").hidden = !S.frozen;
+  const used = new Map((est && est.used || []).map(u => [u.id, u]));
+  document.querySelectorAll("#lineRows tr[data-line]").forEach(tr => {
+    const u = used.get(tr.dataset.line);
+    tr.classList.toggle("off", !u);
+    tr.querySelector("[data-f]").textContent = u ? fmt(u.f, 1) + " Hz" : "—";
+    tr.querySelector("[data-r]").textContent = u ? fmt(u.r) : "—";
+  });
+}
+function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function drawSpec() {
+  const cv = $("spec"); if (!cv) return;
+  const dpr = window.devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight;
+  if (cv.width !== Math.round(W * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+  const g = cv.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
+  const fLo = 40, fHi = 5000, padB = 18, padT = 6;
+  const x = f => (Math.log(f / fLo) / Math.log(fHi / fLo)) * W;
+  const line = cssVar("--line"), muted = cssVar("--muted"), sig = cssVar("--signal"), ok = cssVar("--ok"), ink = cssVar("--ink");
+  g.font = "10px " + cssVar("--f-num"); g.fillStyle = muted; g.strokeStyle = line; g.lineWidth = 1;
+  [50, 100, 200, 500, 1000, 2000, 5000].forEach(f => {
+    const xx = Math.round(x(f)) + 0.5; g.beginPath(); g.moveTo(xx, padT); g.lineTo(xx, H - padB); g.stroke();
+    const t = f >= 1000 ? f / 1000 + "k" : String(f); g.textAlign = f === 5000 ? "right" : "center"; g.fillText(t, Math.min(W - 2, xx), H - 5);
+  });
+  const db = AU.liveDb;
+  if (!db || !AU.binHz) { g.textAlign = "center"; g.fillText("Sin señal", W / 2, H / 2); return; }
+  const i0 = Math.ceil(fLo / AU.binHz), i1 = Math.min(db.length - 1, Math.floor(fHi / AU.binHz));
+  let mx = -200; for (let i = i0; i <= i1; i++) if (db[i] > mx) mx = db[i];
+  const top = mx + 3, span = 70;
+  const y = v => padT + (H - padB - padT) * Math.min(1, Math.max(0, (top - v) / span));
+  g.beginPath(); g.moveTo(x(i0 * AU.binHz), H - padB);
+  // máximo por píxel para no perder picos
+  let px = -1, best = -300;
+  for (let i = i0; i <= i1; i++) {
+    const xx = Math.floor(x(i * AU.binHz));
+    if (xx !== px && px >= 0) { g.lineTo(px, y(best)); best = -300; }
+    px = xx; if (db[i] > best) best = db[i];
+  }
+  g.lineTo(px, y(best)); g.lineTo(px, H - padB); g.closePath();
+  g.fillStyle = cssVar("--signal-soft"); g.fill(); g.strokeStyle = sig; g.lineWidth = 1.2; g.stroke();
+  const p = activeProfile();
+  if (S.view === "medir" && p && S.measuring && S.lastShown != null) {
+    const used = new Set((S.est && S.est.used || []).map(u => u.id));
+    const marks = p.lines.filter(l => l.enabled).map(l => ({ l, f: l.a * S.lastShown + l.c })).filter(m => m.f >= fLo && m.f <= fHi).sort((a, b) => a.f - b.f);
+    let lastX = -99, row = 0;
+    marks.forEach(({ l, f }) => {
+      const lx = x(f); row = lx - lastX < 22 ? (row + 1) % 3 : 0; lastX = lx;
+      const xx = Math.round(x(f)) + 0.5, on = used.has(l.id);
+      g.strokeStyle = on ? ok : muted; g.lineWidth = on ? 2 : 1; g.setLineDash(on ? [] : [3, 3]);
+      g.beginPath(); g.moveTo(xx, padT); g.lineTo(xx, padT + 16); g.stroke(); g.setLineDash([]);
+      g.fillStyle = on ? ok : muted; g.textAlign = "center"; g.fillText(l.id, Math.max(8, Math.min(W - 8, xx)), padT + 27 + row * 11);
+    });
+  }
+  g.fillStyle = ink;
+}
+
+/* ---------- Calibrar (asistente) ---------- */
+const STEP_NAMES = ["Datos", "Fuente de sonido", "Colocación", "Ruido de fondo", "Puntos de calibración", "Resultados", "Verificación", "Guardar"];
+function newWizard(mode, prof) {
+  if (mode === "add" && prof) {
+    S.wiz = { mode, targetId: prof.id, name: prof.name, note: prof.note || "", bg: prof.bg || [], points: prof.points.map(p => ({ ...p })), skipped: [], step: 5, cap: null, ver: null, fit: null, saved: false, startPts: prof.points.length };
+  } else if (mode === "recal" && prof) {
+    S.wiz = { mode, targetId: prof.id, name: prof.name, note: prof.note || "", bg: [], points: [], skipped: [], step: 1, cap: null, ver: null, fit: null, saved: false, startPts: 0 };
+  } else {
+    S.wiz = { mode: "new", targetId: null, name: "", note: "", bg: [], points: [], skipped: [], step: 1, cap: null, ver: null, fit: null, saved: false, startPts: 0 };
+  }
+  S.wizCancel = false; S.view = "calibrar"; render();
+}
+function ptsValid(pts) {
+  if (pts.length < 3) return `Faltan ${3 - pts.length} punto${pts.length === 2 ? "" : "s"} (mínimo 3).`;
+  const r = rangeOf(pts);
+  if (r.max - r.min < 800) return `Los puntos cubren ${fmt(r.max - r.min)} rpm; hacen falta al menos 800 rpm entre el más lento y el más rápido.`;
+  return null;
+}
+function viewCalibrar() {
+  const w = S.wiz;
+  if (!w) {
+    const p = activeProfile();
+    return `<section class="panel"><h2>Calibrar una bancada</h2>
+      <p>La calibración enseña a la app qué tonos del ruido de la bancada siguen a la velocidad. Necesitas el tacómetro y unos 10 minutos.</p>
+      <ul class="clean small"><li>De 3 a 6 velocidades entre 300 y 1800 rpm, medidas con el tacómetro.</li><li>Opcionalmente, algunos puntos en carga y con el síncrono excitado.</li><li>Una comprobación final a una velocidad nueva.</li></ul>
+      <div class="row"><button class="btn primary" data-action="newCal">Nueva calibración</button>
+      ${p && !p.example ? `<button class="btn" data-action="addPts" data-id="${esc(p.id)}">Añadir puntos a «${esc(p.name)}»</button>` : ""}</div></section>`;
+  }
+  const st = w.step;
+  const bar = STEP_NAMES.map((_, i) => `<i class="${i + 1 < st ? "done" : i + 1 === st ? "cur" : ""}"></i>`).join("");
+  const head = `<div class="steps" aria-hidden="true">${bar}</div>
+    <div class="spread"><span class="steplabel">PASO ${st} DE 8 · ${STEP_NAMES[st - 1].toUpperCase()}</span>
+    <button class="btn ghost sm" data-action="wizCancel">Cancelar</button></div>
+    ${S.wizCancel ? `<div class="note warn spread"><span>¿Descartar la calibración en curso? ${w.targetId ? "El perfil guardado no cambia." : ""}</span><span class="row"><button class="btn sm danger" data-action="wizCancelYes">Descartar</button><button class="btn sm" data-action="wizCancelNo">Seguir</button></span></div>` : ""}`;
+  return `<section class="panel">${head}${wizBody(w)}</section>`;
+}
+function srcRequiredNote() { return AU.mode === "off" ? `<p class="note warn small">Activa una fuente de sonido arriba (micrófono o demo) para continuar.</p>` : ""; }
+function wizBody(w) {
+  switch (w.step) {
+    case 1: return `<h2>${w.mode === "recal" ? "Recalibrar bancada" : "Datos de la bancada"}</h2>
+      <div class="field"><label for="wName">Nombre</label><input id="wName" type="text" maxlength="60" placeholder="Por ejemplo, Bancada 3" value="${esc(w.name)}"></div>
+      <div class="field"><label for="wNote">Nota (opcional)</label><input id="wNote" type="text" maxlength="140" placeholder="Máquinas, puesto del laboratorio…" value="${esc(w.note)}"></div>
+      ${w.mode === "recal" ? `<p class="note small">La calibración actual se conserva hasta que guardes la nueva.</p>` : ""}
+      <div class="row end"><button class="btn primary" data-action="wizNext1">Siguiente</button></div>`;
+    case 2: return `<h2>Fuente de sonido</h2>
+      <p>La app escucha la bancada con el micrófono del móvil. Para analizar bien el sonido desactiva la cancelación de ruido y el control de ganancia, cosa que la app pide automáticamente al navegador.</p>
+      <p class="small muted">Pulsa <b>Micrófono</b> en la barra superior y acepta el permiso. Comprueba que el medidor de nivel se mueve al hablar o al arrancar la bancada. Para probar sin bancada, usa <b>Demo</b>.</p>
+      ${srcRequiredNote()}
+      <div class="row end"><button class="btn" data-action="wizBack">Atrás</button><button class="btn primary" data-action="wizNext"${AU.mode === "off" ? " disabled" : ""}>Siguiente</button></div>`;
+    case 3: return `<h2>Colocación del móvil</h2>
+      ${schemeSvg()}
+      <ul class="clean small">
+        <li>A unos 30 cm de la carcasa, a media altura de la bancada.</li>
+        <li>El micrófono principal suele estar en el borde inferior: no lo tapes con la mano ni la funda.</li>
+        <li>Usa siempre la misma posición, en calibración y al medir. Conviene marcarla en la mesa.</li>
+        <li>Evita apoyar el móvil sobre la bancada: la vibración del soporte se mete en la medida.</li>
+      </ul>
+      <div class="row end"><button class="btn" data-action="wizBack">Atrás</button><button class="btn primary" data-action="wizNext">Siguiente</button></div>`;
+    case 4: {
+      const c = w.cap && w.cap.kind === "bg" ? w.cap : null;
+      return `<h2>Ruido de fondo</h2>
+      <p>Con <b>tu bancada parada</b> y el resto del laboratorio funcionando como de costumbre, graba 5 segundos. Así la app aprende qué tonos no son de tu bancada (zumbido de red, otras máquinas).</p>
+      ${srcRequiredNote()}
+      ${c ? `<div class="prog"><i id="capProg" style="width:0"></i></div><p class="small muted">Grabando fondo…</p>` :
+        w.bg.length ? `<p class="note ok small">Registradas ${w.bg.length} líneas de fondo: ${w.bg.slice(0, 8).map(p => fmt(p.f, 0) + " Hz").join(", ")}${w.bg.length > 8 ? "…" : ""}</p>` : ""}
+      <div class="row end"><button class="btn" data-action="wizBack">Atrás</button>
+        <button class="btn" data-action="bgRec"${AU.mode === "off" || c ? " disabled" : ""}>${w.bg.length ? "Repetir grabación" : "Grabar fondo (5 s)"}</button>
+        <button class="btn primary" data-action="wizNext"${c ? " disabled" : ""}>${w.bg.length ? "Siguiente" : "Saltar"}</button></div>`;
+    }
+    case 5: return wizPoints(w);
+    case 6: return wizResults(w);
+    case 7: return wizVerify(w);
+    case 8: return wizSave(w);
+  }
+  return "";
+}
+function schemeSvg() {
+  return `<svg class="scheme" viewBox="0 0 420 150" role="img" aria-label="Esquema: móvil a unos 30 centímetros de la carcasa del motor">
+    <g fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="20" y="40" width="150" height="70" rx="6"/>
+      <line x1="40" y1="40" x2="40" y2="110" opacity=".35"/><line x1="60" y1="40" x2="60" y2="110" opacity=".35"/><line x1="80" y1="40" x2="80" y2="110" opacity=".35"/>
+      <line x1="170" y1="75" x2="200" y2="75" stroke-width="5"/>
+      <line x1="10" y1="118" x2="410" y2="118" opacity=".5"/>
+      <rect x="320" y="42" width="34" height="66" rx="6"/>
+      <circle cx="337" cy="101" r="2.5" fill="currentColor"/>
+    </g>
+    <g stroke="var(--signal)" stroke-width="1.5" fill="var(--signal)">
+      <line x1="172" y1="22" x2="318" y2="22"/>
+      <path d="M172 22 l8 -4 v8z"/><path d="M318 22 l-8 -4 v8z"/>
+    </g>
+    <text x="245" y="16" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="var(--signal)">≈ 30 cm</text>
+    <text x="95" y="80" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="12" fill="currentColor">bancada</text>
+    <text x="337" y="138" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11" fill="currentColor">micrófono abajo</text>
+  </svg>`;
+}
+function wizPoints(w) {
+  const c = w.cap && w.cap.kind === "pt" ? w.cap : null;
+  const doneFor = r => w.points.find(p => p.target === r);
+  const rows = SUGGESTED.map(r => {
+    const d = doneFor(r), sk = w.skipped.includes(r);
+    return `<div class="target${d ? " done" : sk ? " skip" : ""}"><span class="num">${fmt(r)} rpm</span>
+      <span class="st">${d ? `✓ Medido ${fmt(d.rpm)} rpm · ${esc(Algo.condLabel(d))}` : sk ? "Saltado" : "Pendiente"}</span>
+      <span class="row">${d ? `<button class="btn sm" data-action="capStart" data-t="${r}"${c || AU.mode === "off" ? " disabled" : ""}>Repetir</button>` :
+        sk ? `<button class="btn sm" data-action="unskip" data-t="${r}">Recuperar</button>` :
+        `<button class="btn sm" data-action="capStart" data-t="${r}"${c || AU.mode === "off" ? " disabled" : ""}>Capturar</button><button class="btn sm ghost" data-action="skip" data-t="${r}">Saltar</button>`}</span></div>`;
+  }).join("");
+  const extra = w.points.filter(p => !SUGGESTED.includes(p.target));
+  const inv = ptsValid(w.points);
+  return `<h2>Puntos de calibración</h2>
+    <p class="small">Para cada velocidad: lleva la bancada, espera a que el indicador marque <b>estable</b>, pulsa capturar y mide con el tacómetro mientras graba. Las velocidades son orientativas; puedes saltar las que no te vengan bien.</p>
+    ${srcRequiredNote()}
+    ${c ? capPanel(c) : ""}
+    <div class="targets">${rows}</div>
+    <div class="spread"><h3>Puntos libres</h3><button class="btn sm" data-action="capStart" data-t="free"${c || AU.mode === "off" ? " disabled" : ""}>+ Punto libre</button></div>
+    <p class="small muted">Útiles para añadir puntos en carga o con el síncrono excitado. Con 2 o 3 basta.</p>
+    ${extra.length ? `<div class="tw"><table><thead><tr><th class="num">rpm</th><th>Condiciones</th><th class="num">Picos</th><th></th></tr></thead><tbody>${extra.map(p => `<tr><td class="num">${fmt(p.rpm)}</td><td>${esc(Algo.condLabel(p))}</td><td class="num">${p.peaks.length}</td><td><button class="btn sm ghost" data-action="delPt" data-i="${w.points.indexOf(p)}">Quitar</button></td></tr>`).join("")}</tbody></table></div>` : ""}
+    ${inv ? `<p class="note small">${inv}</p>` : `<p class="note ok small">${w.points.length} puntos entre ${fmt(rangeOf(w.points).min)} y ${fmt(rangeOf(w.points).max)} rpm. Ya puedes calcular, o añadir más puntos.</p>`}
+    <div class="row end"><button class="btn" data-action="wizBack"${w.mode === "add" ? " hidden" : ""}>Atrás</button><button class="btn primary" data-action="calc"${inv || c ? " disabled" : ""}>Terminar y calcular</button></div>`;
+}
+function capPanel(c) {
+  const title = c.target === "free" ? "Punto libre" : `Objetivo: ${fmt(c.target)} rpm`;
+  if (c.phase === "wait") return `<div class="panel" style="background:var(--sunk)">
+    <div class="spread"><h3>${title}</h3><span id="stab" class="stab"><span class="dot"></span>Comprobando…</span></div>
+    <p class="small">Lleva la bancada a la velocidad y espera a que el indicador se ponga en verde.</p>
+    <div class="row end"><button class="btn" data-action="capAbort">Cancelar</button><button class="btn primary" data-action="capRec">Capturar (5 s)</button></div></div>`;
+  if (c.phase === "rec") return `<div class="panel" style="background:var(--sunk)"><h3>${title}</h3>
+    <div class="prog"><i id="capProg" style="width:0"></i></div><p class="small"><b>Mide ahora con el tacómetro.</b> Mantén la velocidad constante.</p></div>`;
+  return `<div class="panel" style="background:var(--sunk)"><h3>${title} · captura lista</h3>
+    <p class="small muted">${c.peaks.length} picos detectados.</p>
+    <div class="grid2">
+      <div class="field"><label for="capRpm">rpm medidas con el tacómetro</label><input id="capRpm" type="number" inputmode="numeric" min="100" max="3000" step="1" value="${c.target !== "free" ? "" : ""}" placeholder="${c.target !== "free" ? c.target : "rpm"}"></div>
+      <div class="field"><label for="capLoad">Carga</label><select id="capLoad"><option value="vacio"${c.load === "vacio" ? " selected" : ""}>Vacío</option><option value="media"${c.load === "media" ? " selected" : ""}>Carga media</option><option value="plena"${c.load === "plena" ? " selected" : ""}>Plena carga</option></select></div>
+    </div>
+    <label class="small"><input id="capExc" type="checkbox"${c.exc ? " checked" : ""}> Síncrono excitado</label>
+    <p id="capErr" class="note bad small" hidden></p>
+    <div class="row end"><button class="btn" data-action="capRepeat">Repetir captura</button><button class="btn primary" data-action="capSave">Guardar punto</button></div></div>`;
+}
+function wizResults(w) {
+  const f = w.fit;
+  if (!f) return `<p>Calculando…</p>`;
+  const good = f.lines.filter(l => l.enabled).length;
+  const stCls = { ok: "ok", dudosa: "warn", mala: "bad" }, stTxt = { ok: "✓ válida", dudosa: "⚠ dudosa", mala: "✗ descartada" };
+  return `<h2>Líneas encontradas</h2>
+    ${f.lines.length ? `<p class="small">Cada línea es un tono que sigue a la velocidad según <span class="num">f = k·rpm/60 + c</span>. Puedes desactivar las que no te convenzan.</p>
+    <div class="tw"><table><thead><tr><th>Usar</th><th>Línea</th><th class="num">Orden k</th><th class="num">c (Hz)</th><th class="num">Error</th><th class="num">Puntos</th><th>Visto en</th><th>Estado</th></tr></thead><tbody>
+    ${f.lines.map((l, i) => `<tr class="${l.enabled ? "" : "off"}"><td><input type="checkbox" aria-label="Usar ${l.id}" data-action="toggleLine" data-i="${i}"${l.enabled ? " checked" : ""}></td>
+      <td><b class="num">${l.id}</b><div class="small muted">${esc(l.origin)}</div></td><td class="num">${fmt(l.k, 2)}</td><td class="num">${fmt(l.c, 1)}</td>
+      <td class="num">±${fmt(l.rmsRpm, 0)} rpm</td><td class="num">${l.n}/${l.np}</td><td class="small">${esc(l.conds.join(", "))}</td>
+      <td><span class="chip ${stCls[l.status]}">${stTxt[l.status]}</span></td></tr>`).join("")}
+    </tbody></table></div>` : `<p class="note bad">No se ha encontrado ninguna línea que siga a la velocidad. Revisa la colocación del móvil y que las rpm introducidas sean correctas, y añade más puntos.</p>`}
+    <p class="small muted">Descartadas como fijas (no siguen a la velocidad): ${f.fixed.length ? f.fixed.slice(0, 12).map(x => fmt(x, 0) + " Hz").join(", ") + (f.fixed.length > 12 ? "…" : "") : "ninguna"}.</p>
+    ${good && good < 2 ? `<p class="note warn small">Con una sola línea activa la medida funciona, pero es más fácil que se confunda con otras máquinas. Conviene añadir puntos.</p>` : ""}
+    <div class="row end"><button class="btn" data-action="backToPts">Añadir más puntos</button><button class="btn primary" data-action="wizNext"${good ? "" : " disabled"}>Siguiente</button></div>`;
+}
+function wizVerify(w) {
+  const v = w.ver || { phase: "idle" };
+  let res = "";
+  if (v.phase === "rec") res = `<div class="prog"><i id="capProg" style="width:0"></i></div><p class="small"><b>Mide ahora con el tacómetro.</b></p>`;
+  if (v.phase === "form") res = `<div class="panel" style="background:var(--sunk)"><p>Estimación de la app: <b class="num">${v.est && v.est.rpm != null ? fmt(v.est.rpm) + " rpm" : "sin lectura"}</b>${v.est && v.est.rpm != null ? ` <span class="small muted">(${v.est.n} de ${v.est.total} líneas)</span>` : ""}</p>
+    <div class="grid2"><div class="field"><label for="verRpm">rpm del tacómetro</label><input id="verRpm" type="number" inputmode="numeric" min="100" max="3000"></div>
+    <div class="field"><label for="verLoad">Carga</label><select id="verLoad"><option value="vacio">Vacío</option><option value="media">Carga media</option><option value="plena">Plena carga</option></select></div></div>
+    <label class="small"><input id="verExc" type="checkbox"> Síncrono excitado</label>
+    <p id="verErr" class="note bad small" hidden></p>
+    <div class="row end"><button class="btn primary" data-action="verCompare">Comparar</button></div></div>`;
+  if (v.phase === "done") {
+    const ok = v.err != null && Math.abs(v.err) <= 50;
+    res = `<div class="note ${ok ? "ok" : "bad"}"><b>${v.err == null ? "La app no ha dado lectura en este punto." : `Error: ${v.err > 0 ? "+" : ""}${fmt(v.err)} rpm ${ok ? "✓" : "✗"}`}</b>
+      <div class="small">Tacómetro ${fmt(v.rpm)} rpm · app ${v.est && v.est.rpm != null ? fmt(v.est.rpm) : "—"} rpm.</div></div>
+      <div class="row">${!ok ? `<button class="btn primary" data-action="verAdd">Añadir este punto y recalcular</button>` : `<button class="btn" data-action="verAdd">Añadir como punto igualmente</button>`}<button class="btn" data-action="verAgain">Probar otra velocidad</button></div>`;
+  }
+  return `<h2>Verificación</h2>
+    <p class="small">Pon la bancada a una velocidad que no hayas usado al calibrar, captura y compara con el tacómetro. El objetivo es un error de 50 rpm o menos.</p>
+    <div class="spread"><span class="small muted">Lectura en directo</span><span class="big-est"><span id="verLive">—</span> <span class="small muted">rpm</span></span></div>
+    ${res}
+    <div class="row end"><button class="btn" data-action="wizBack">Atrás</button>
+    ${v.phase === "idle" || v.phase === "done" ? `<button class="btn" data-action="verRec"${AU.mode === "off" ? " disabled" : ""}>Capturar y comparar (5 s)</button>` : ""}
+    <button class="btn primary" data-action="wizNext"${v.phase === "rec" ? " disabled" : ""}>${v.phase === "done" ? "Siguiente" : "Saltar verificación"}</button></div>`;
+}
+function wizSave(w) {
+  if (w.saved) return `<h2>Perfil guardado</h2><p class="note ok">«${esc(w.name)}» es ahora el perfil activo.</p>
+    <div class="row"><button class="btn primary" data-action="goMeasure">Ir a medir</button><button class="btn" data-action="exportOne" data-id="${esc(w.savedId)}">Exportar copia</button></div>`;
+  const r = rangeOf(w.points), en = w.fit.lines.filter(l => l.enabled).length;
+  return `<h2>Guardar perfil</h2>
+    <div class="field"><label for="wName2">Nombre</label><input id="wName2" type="text" maxlength="60" value="${esc(w.name)}"></div>
+    <ul class="clean small"><li>${w.points.length} puntos entre ${fmt(r.min)} y ${fmt(r.max)} rpm.</li><li>${en} líneas activas de ${w.fit.lines.length} encontradas.</li>
+    ${w.targetId ? `<li>Sustituye la calibración guardada de «${esc((S.store.profiles.find(p => p.id === w.targetId) || {}).name || "")}».</li>` : ""}</ul>
+    <div class="row end"><button class="btn" data-action="wizBack">Atrás</button><button class="btn primary" data-action="wizSaveBtn">Guardar perfil</button></div>`;
+}
+function afterWizRender() {
+  const w = S.wiz; if (!w) return;
+  if (w.cap && w.cap.phase === "form") { const i = $("capRpm"); if (i) i.focus(); }
+  if (w.ver && w.ver.phase === "form") { const i = $("verRpm"); if (i) i.focus(); }
+  wizLive();
+}
+function wizLive() {
+  const w = S.wiz; if (!w) return;
+  if (w.step === 5 && w.cap && w.cap.phase === "wait") {
+    const el = $("stab"); if (!el) return;
+    const s = AU.stability();
+    el.innerHTML = `<span class="dot${s.ok ? " on" : ""}"></span>${s.ok ? "Estable" : s.n < 3 ? "Poca señal" : "Estabilizando…"}`;
+    el.style.color = s.ok ? "var(--ok)" : "var(--muted)";
+  }
+  if (w.step === 7 && w.fit) {
+    const el = $("verLive"); if (!el) return;
+    const est = Algo.estimate(AU.livePeaks, w.fit.lines, rangeOf(w.points), w.verPrev, w.fit.fixed);
+    if (est && est.rpm != null && est.n >= Math.min(2, est.total)) { w.verPrev = est.rpm; el.textContent = fmt(Math.round(est.rpm / 5) * 5); }
+    else el.textContent = "—";
+  }
+}
+function runFit() {
+  const w = S.wiz;
+  const pts = w.points.map(p => ({ rpm: p.rpm, load: p.load, exc: p.exc, peaks: p.peaks }));
+  w.fit = Algo.fitLines(pts, w.bg);
+}
+
+/* ---------- Perfiles ---------- */
+function viewPerfiles() {
+  const ps = S.store.profiles;
+  const cards = ps.map(p => {
+    const en = p.lines.filter(l => l.enabled).length, act = p.id === S.store.activeId;
+    const del = S.confirmDel === p.id;
+    return `<article class="pcard${act ? " active" : ""}">
+      <div class="spread"><h3>${esc(p.name)}</h3>${act ? `<span class="chip ok">Activo</span>` : ""}${p.example ? `<span class="chip info">Ejemplo</span>` : ""}</div>
+      ${p.note ? `<p class="small">${esc(p.note)}</p>` : ""}
+      <p class="meta num">${p.points.length} puntos · ${fmt(p.range.min)}–${fmt(p.range.max)} rpm · ${en} líneas activas · ${fdate(p.updated)}</p>
+      ${del ? `<div class="note bad spread"><span>¿Borrar «${esc(p.name)}»? No se puede deshacer.</span><span class="row"><button class="btn sm danger solid" data-action="delYes" data-id="${esc(p.id)}">Borrar</button><button class="btn sm" data-action="delNo">Cancelar</button></span></div>` :
+      `<div class="row">${act ? "" : `<button class="btn sm primary" data-action="use" data-id="${esc(p.id)}">Usar</button>`}
+        <button class="btn sm" data-action="addPts" data-id="${esc(p.id)}">Añadir puntos</button>
+        <button class="btn sm" data-action="recal" data-id="${esc(p.id)}">Recalibrar</button>
+        <button class="btn sm" data-action="exportOne" data-id="${esc(p.id)}">Exportar</button>
+        <button class="btn sm danger" data-action="delAsk" data-id="${esc(p.id)}">Borrar</button></div>`}
+    </article>`;
+  }).join("");
+  return `<div class="spread"><h2>Perfiles</h2><div class="row"><button class="btn sm" data-action="importToggle">Importar</button><button class="btn sm primary" data-action="newCal">Nueva calibración</button></div></div>
+  ${S.importOpen ? `<section class="panel"><h3>Importar perfiles</h3>
+    <p class="small muted">Elige un archivo exportado desde esta app, o pega su contenido.</p>
+    <input id="impFile" type="file" accept=".json,application/json">
+    <textarea id="impText" placeholder='{"app":"tacometro-acustico", …}'></textarea>
+    <p id="impErr" class="note bad small" hidden></p>
+    <div class="row end"><button class="btn" data-action="importToggle">Cerrar</button><button class="btn primary" data-action="importText">Importar texto pegado</button></div></section>` : ""}
+  <div class="plist">${cards || `<p class="muted">No hay perfiles guardados.</p>`}</div>
+  <section class="danger-zone"><h3>Reseteo total</h3>
+    <p class="small">Borra todos los perfiles de este móvil. Antes puedes exportar una copia de seguridad.</p>
+    ${S.confirmReset ? `<div class="field"><label for="resetTxt">Escribe BORRAR para confirmar</label><input id="resetTxt" type="text" autocomplete="off"></div>
+      <div class="row"><button class="btn" data-action="exportAll"${ps.length ? "" : " disabled"}>Exportar copia antes</button><button class="btn danger solid" data-action="resetYes">Borrar todo</button><button class="btn" data-action="resetNo">Cancelar</button></div>` :
+      `<div class="row"><button class="btn danger" data-action="resetAsk"${ps.length ? "" : " disabled"}>Borrar todos los perfiles…</button></div>`}
+  </section>`;
+}
+async function exportProfiles(list, filename) {
+  const data = JSON.stringify({ app: "tacometro-acustico", version: 1, exported: new Date().toISOString(), profiles: list }, null, 1);
+  try {
+    const dl = window.claude && window.claude.use ? await Promise.race([window.claude.use("downloads"), new Promise(r => setTimeout(() => r(null), 1500))]) : null;
+    if (dl) { await dl.save({ filename, data }); toast("Copia exportada"); return; }
+  } catch (e) { if (e && e.code === "declined") return; }
+  try {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([data], { type: "application/json" }));
+    a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    toast("Archivo exportado");
+  } catch (e) { toast("No se ha podido exportar el archivo"); }
+}
+const slug = s => (s || "perfil").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "").toLowerCase() || "perfil";
+function importData(txt) {
+  let obj; try { obj = JSON.parse(txt); } catch (e) { return "El contenido no es un archivo de perfiles válido (JSON mal formado)."; }
+  const list = Array.isArray(obj) ? obj : obj && Array.isArray(obj.profiles) ? obj.profiles : obj && obj.lines ? [obj] : null;
+  if (!list || !list.length) return "No se han encontrado perfiles en el archivo.";
+  let n = 0;
+  for (const p of list) {
+    if (!p || !Array.isArray(p.lines) || !Array.isArray(p.points)) continue;
+    const q = { ...p };
+    if (S.store.profiles.some(x => x.id === q.id) || !q.id) { q.id = uid(); q.name = (q.name || "Perfil") + " (importado)"; }
+    q.updated = q.updated || Date.now(); q.created = q.created || Date.now();
+    q.range = q.range || rangeOf(q.points);
+    S.store.profiles.push(q); n++;
+  }
+  if (!n) return "Los perfiles del archivo no tienen el formato esperado.";
+  if (!activeProfile()) S.store.activeId = S.store.profiles[0].id;
+  saveStore(); S.importOpen = false; toast(n === 1 ? "1 perfil importado" : n + " perfiles importados"); render();
+  return null;
+}
+
+/* ---------- Ayuda ---------- */
+function viewAyuda() {
+  return `<section class="panel"><h2>Cómo funciona</h2>
+    <p>Las máquinas de la bancada giran solidarias, así que varios tonos de su ruido son proporcionales a la velocidad: el paso de las palas del ventilador, el colector de la máquina de continua, los armónicos de ranura del motor de inducción o el zumbido magnético del síncrono. La calibración identifica esos tonos y ajusta para cada uno una recta <span class="num">f = k·rpm/60 + c</span>. Al medir, la app busca la velocidad en la que coincide el mayor número de líneas.</p>
+    <p class="small muted">Precisión esperada: mejor que 50 rpm dentro del rango calibrado. Fuera de él la lectura se marca como extrapolada.</p></section>
+  <section class="panel"><h2>Usarla con el micrófono del móvil</h2>
+    <p>Dentro de Claude esta página no tiene acceso al micrófono, así que aquí solo funciona el modo Demo. Para usarla con la bancada, aloja el archivo HTML de la app en una web con HTTPS:</p>
+    <ul class="clean small">
+      <li><b>Netlify Drop</b>: entra en app.netlify.com/drop desde el ordenador y arrastra una carpeta que contenga el archivo renombrado como <span class="num">index.html</span>. Te da una dirección pública al momento.</li>
+      <li><b>GitHub Pages</b>: sube el archivo como <span class="num">index.html</span> a un repositorio y activa Pages en sus ajustes.</li>
+      <li>Abre la dirección en el móvil (Chrome en Android, Safari en iPhone) y añádela a la pantalla de inicio para usarla como una app.</li>
+    </ul>
+    <p class="small muted">Los perfiles se guardan en el navegador de cada móvil. Para pasarlos a otro, usa Exportar e Importar en Perfiles.</p></section>
+  <section class="panel"><h2>Consejos</h2>
+    <ul class="clean small"><li>Calibra en condiciones variadas: en vacío, en carga y con el síncrono excitado y sin excitar.</li>
+    <li>Mide con el móvil en la misma posición que en la calibración.</li>
+    <li>Si la lectura salta o no aparece, acerca el móvil o añade puntos de calibración en esa zona de velocidad.</li></ul></section>`;
+}
+
+/* ===================== Acciones ===================== */
+const actions = {
+  srcMic: () => setSource("mic"), srcDemo: () => setSource("demo"), srcOff: () => setSource("off"),
+  toggleMeasure, freeze: () => { S.frozen = !S.frozen; render(); },
+  newCal: () => newWizard("new"),
+  addPts: el => { const p = S.store.profiles.find(x => x.id === el.dataset.id); if (p) newWizard("add", p); },
+  recal: el => { const p = S.store.profiles.find(x => x.id === el.dataset.id); if (p) newWizard("recal", p); },
+  wizCancel: () => { if (S.wiz && (S.wiz.points.length > S.wiz.startPts || S.wiz.bg.length)) { S.wizCancel = true; render(); } else { S.wiz = null; render(); } },
+  wizCancelYes: () => { S.wiz = null; S.wizCancel = false; render(); },
+  wizCancelNo: () => { S.wizCancel = false; render(); },
+  wizNext1: () => {
+    const n = $("wName").value.trim();
+    if (!n) { $("wName").focus(); toast("Pon un nombre a la bancada"); return; }
+    S.wiz.name = n; S.wiz.note = $("wNote").value.trim(); S.wiz.step = 2; render();
+  },
+  wizNext: () => { const w = S.wiz; w.step = Math.min(8, w.step + 1); if (w.step === 7) w.ver = { phase: "idle" }; render(); },
+  wizBack: () => { const w = S.wiz; if (w.cap) return; w.step = Math.max(1, w.step - 1); render(); },
+  bgRec: async () => {
+    const w = S.wiz; w.cap = { kind: "bg" }; render();
+    try { const pk = await AU.capture(5000, p => { const b = $("capProg"); if (b) b.style.width = p * 100 + "%"; }); w.bg = pk.filter(p => p.prom >= 8); }
+    catch (e) { toast(e.message); }
+    w.cap = null; render();
+  },
+  capStart: el => { const w = S.wiz; const t = el.dataset.t === "free" ? "free" : +el.dataset.t; w.cap = { kind: "pt", target: t, phase: "wait", load: "vacio", exc: false }; render(); },
+  capAbort: () => { S.wiz.cap = null; render(); },
+  capRec: async () => {
+    const c = S.wiz.cap; c.phase = "rec"; render();
+    try { c.peaks = await AU.capture(5000, p => { const b = $("capProg"); if (b) b.style.width = p * 100 + "%"; }); c.phase = "form"; }
+    catch (e) { toast(e.message); S.wiz.cap = null; }
+    render();
+  },
+  capRepeat: () => { S.wiz.cap.phase = "wait"; render(); },
+  capSave: () => {
+    const w = S.wiz, c = w.cap, r = +$("capRpm").value;
+    if (!r || r < 100 || r > 3000) { const e = $("capErr"); e.textContent = "Introduce las rpm del tacómetro (entre 100 y 3000)."; e.hidden = false; return; }
+    if (c.target !== "free" && Math.abs(r - c.target) > 250) { /* se acepta, solo aviso */ toast("Guardado. Ojo: lejos del objetivo de " + fmt(c.target) + " rpm"); }
+    const pt = { target: c.target, rpm: r, load: $("capLoad").value, exc: $("capExc").checked, t: Date.now(), peaks: c.peaks };
+    if (c.target !== "free") w.points = w.points.filter(p => p.target !== c.target);
+    w.points.push(pt); w.skipped = w.skipped.filter(x => x !== c.target);
+    w.cap = null; render();
+  },
+  skip: el => { S.wiz.skipped.push(+el.dataset.t); render(); },
+  unskip: el => { S.wiz.skipped = S.wiz.skipped.filter(x => x !== +el.dataset.t); render(); },
+  delPt: el => { S.wiz.points.splice(+el.dataset.i, 1); render(); },
+  calc: () => { runFit(); S.wiz.step = 6; render(); },
+  backToPts: () => { S.wiz.step = 5; render(); },
+  toggleLine: el => { const l = S.wiz.fit.lines[+el.dataset.i]; l.enabled = el.checked; render(); },
+  verRec: async () => {
+    const w = S.wiz; w.ver = { phase: "rec" }; render();
+    try {
+      const pk = await AU.capture(5000, p => { const b = $("capProg"); if (b) b.style.width = p * 100 + "%"; });
+      const est = Algo.estimate(pk, w.fit.lines, rangeOf(w.points), null, w.fit.fixed);
+      w.ver = { phase: "form", peaks: pk, est: est && est.rpm != null && est.n >= Math.min(2, est.total) ? est : { rpm: null, n: est ? est.n : 0, total: est ? est.total : 0 } };
+    } catch (e) { toast(e.message); w.ver = { phase: "idle" }; }
+    render();
+  },
+  verCompare: () => {
+    const v = S.wiz.ver, r = +$("verRpm").value;
+    if (!r || r < 100 || r > 3000) { const e = $("verErr"); e.textContent = "Introduce las rpm del tacómetro (entre 100 y 3000)."; e.hidden = false; return; }
+    v.rpm = r; v.load = $("verLoad").value; v.exc = $("verExc").checked;
+    v.err = v.est && v.est.rpm != null ? Math.round(v.est.rpm - r) : null; v.phase = "done"; render();
+  },
+  verAdd: () => {
+    const w = S.wiz, v = w.ver;
+    w.points.push({ target: "free", rpm: v.rpm, load: v.load, exc: v.exc, t: Date.now(), peaks: v.peaks });
+    runFit(); w.ver = { phase: "idle" }; w.step = 6; toast("Punto añadido. Revisa las líneas recalculadas"); render();
+  },
+  verAgain: () => { S.wiz.ver = { phase: "idle" }; render(); },
+  wizSaveBtn: () => {
+    const w = S.wiz, name = ($("wName2").value || "").trim() || w.name || "Bancada";
+    const now = Date.now(), pts = w.points;
+    const old = w.targetId ? S.store.profiles.find(p => p.id === w.targetId) : null;
+    const prof = { id: old ? old.id : uid(), name, note: w.note, created: old ? old.created : now, updated: now, range: rangeOf(pts), bg: w.bg, points: pts, lines: w.fit.lines, fixed: w.fit.fixed };
+    if (old) S.store.profiles[S.store.profiles.indexOf(old)] = prof; else S.store.profiles.push(prof);
+    S.store.activeId = prof.id; saveStore();
+    w.saved = true; w.savedId = prof.id; w.name = name; render();
+  },
+  goMeasure: () => { S.wiz = null; S.view = "medir"; render(); },
+  use: el => { S.store.activeId = el.dataset.id; saveStore(); S.hist = []; S.lastShown = null; toast("Perfil activo cambiado"); render(); },
+  exportOne: el => { const p = S.store.profiles.find(x => x.id === el.dataset.id); if (p) exportProfiles([p], "perfil-" + slug(p.name) + ".json"); },
+  exportAll: () => exportProfiles(S.store.profiles, "perfiles-tacometro-" + new Date().toISOString().slice(0, 10) + ".json"),
+  delAsk: el => { S.confirmDel = el.dataset.id; render(); },
+  delNo: () => { S.confirmDel = null; render(); },
+  delYes: el => {
+    const id = el.dataset.id; S.store.profiles = S.store.profiles.filter(p => p.id !== id);
+    if (S.store.activeId === id) S.store.activeId = S.store.profiles[0] ? S.store.profiles[0].id : null;
+    S.confirmDel = null; saveStore(); toast("Perfil borrado"); render();
+  },
+  resetAsk: () => { S.confirmReset = true; render(); },
+  resetNo: () => { S.confirmReset = false; render(); },
+  resetYes: () => {
+    if (($("resetTxt").value || "").trim().toUpperCase() !== "BORRAR") { toast("Escribe BORRAR para confirmar"); $("resetTxt").focus(); return; }
+    S.store.profiles = []; S.store.activeId = null; S.confirmReset = false; saveStore(); toast("Todos los perfiles borrados"); render();
+  },
+  importToggle: () => { S.importOpen = !S.importOpen; render(); },
+  importText: () => { const e = importData($("impText").value || ""); if (e) { const el = $("impErr"); el.textContent = e; el.hidden = false; } }
+};
+
+document.addEventListener("click", ev => {
+  const tab = ev.target.closest(".tabs button");
+  if (tab) { S.view = tab.dataset.view; S.confirmDel = null; S.confirmReset = false; render(); return; }
+  const el = ev.target.closest("[data-action]");
+  if (!el || el.disabled) return;
+  if (el.tagName === "INPUT" && el.type === "checkbox") return;
+  const fn = actions[el.dataset.action]; if (fn) fn(el);
+});
+document.addEventListener("change", ev => {
+  const el = ev.target;
+  if (el.id === "profileSel") { S.store.activeId = el.value; saveStore(); S.hist = []; S.lastShown = null; render(); }
+  else if (el.dataset && el.dataset.action === "toggleLine") actions.toggleLine(el);
+  else if (el.id === "impFile" && el.files && el.files[0]) {
+    const r = new FileReader();
+    r.onload = () => { const e = importData(String(r.result)); if (e) { const x = $("impErr"); if (x) { x.textContent = e; x.hidden = false; } } };
+    r.readAsText(el.files[0]);
+  }
+  else if (el.id === "demoLoad") { AU.demoLoad = el.value; AU.updateDemo(); }
+  else if (el.id === "demoExc") { AU.demoExc = el.checked; AU.updateDemo(); }
+});
+document.addEventListener("input", ev => {
+  if (ev.target.id === "demoRpm") { AU.demoRpm = +ev.target.value; $("demoRpmTxt").textContent = fmt(AU.demoRpm); }
+});
+window.addEventListener("resize", () => { if (S.view === "medir") drawSpec(); });
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && AU.mode !== "off" && !AU.wake) AU.lockScreen(); });
+
+S.store = loadStore();
+seedExample();
+renderSource();
+render();
+</script>
+
+</body></html>
